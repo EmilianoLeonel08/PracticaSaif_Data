@@ -1,16 +1,34 @@
 #Cómandos de ejecución: 
-# Enviar webhook
-#curl.exe -X POST http://localhost:8000/send-webhook
-# Ver estado
-#curl.exe http://localhost:8000/status
+# ==============================================
+# APLICACIÓN COMPLETAMENTE PARAMETRIZABLE
+# ==============================================
+# 
+# ENDPOINTS BÁSICOS:
+# Enviar webhook con parámetros personalizados
+#curl.exe -X POST "https://practicasaif-data-webhook.onrender.com/send-webhook?mensaje=MiMensaje&usuario=MiUsuario&tecnologia=MiTech"
+# Ver estado completo
+#curl.exe https://practicasaif-data-webhook.onrender.com/status
+# 
+# CONFIGURACIÓN DINÁMICA:
+# Cambiar usuario por defecto
+#curl.exe -X PUT "https://practicasaif-data-webhook.onrender.com/config/usuario?nuevo_usuario=NuevoUsuario"
+# Cambiar tecnología por defecto
+#curl.exe -X PUT "https://practicasaif-data-webhook.onrender.com/config/tecnologia?nueva_tecnologia=NuevaTech"
+# Cambiar mensaje por defecto
+#curl.exe -X PUT "https://practicasaif-data-webhook.onrender.com/config/mensaje?nuevo_mensaje=NuevoMensaje"
+# Cambiar mensaje automático por defecto
+#curl.exe -X PUT "https://practicasaif-data-webhook.onrender.com/config/mensaje-auto?nuevo_mensaje=NuevoMensajeAuto"
+# 
+# WEBHOOKS:
 # Cambiar URL del webhook
-#curl.exe -X PUT "http://localhost:8000/webhook-url?new_url=https
-#://nueva-url.com"
+#curl.exe -X PUT "https://practicasaif-data-webhook.onrender.com/webhook-url?new_url=https://nueva-url.com"
+# Cambiar intervalo
+#curl.exe -X PUT "https://practicasaif-data-webhook.onrender.com/intervalo?segundos=10"
+# 
+# AUTOMÁTICOS:
 # Enviar webhook automático
-#curl.exe -X POST http://localhost:8000/start-auto-webhook
-# Enviar webhook automático con intervalo
-#curl.exe -X POST http://localhost:8000/start-auto-webhook?intervalo=
-#curl.exe -X POST http://localhost:8000/stop-auto-webhook
+#curl.exe -X POST https://practicasaif-data-webhook.onrender.com/start-auto-webhook
+#curl.exe -X POST https://practicasaif-data-webhook.onrender.com/stop-auto-webhook
 # Para ejecutar el servidor FastAPI, usa el comando:
 # uvicorn server:app 
 # Para Render: uvicorn server:app --host 0.0.0.0 --port $PORT
@@ -42,14 +60,28 @@ if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
     uvicorn.run("server:app", host="0.0.0.0", port=port)
 
-webhook_url = "https://webhook.site/5b773625-6bfe-43f4-b462-1d5634ab1df6"
+# Variables de entorno con valores por defecto
+WEBHOOK_URL_DEFAULT = os.environ.get("WEBHOOK_URL", "https://webhook.site/5b773625-6bfe-43f4-b462-1d5634ab1df6")
+USUARIO_DEFAULT = os.environ.get("USUARIO", "Usuario por defecto")
+TECNOLOGIA_DEFAULT = os.environ.get("TECNOLOGIA", "FastAPI")
+MENSAJE_DEFAULT = os.environ.get("MENSAJE", "Hola desde aplicación parametrizable")
+MENSAJE_AUTO_DEFAULT = os.environ.get("MENSAJE_AUTO", "Webhook automático parametrizable")
+INTERVALO_DEFAULT = int(os.environ.get("INTERVALO_DEFAULT", "2"))
+MENSAJE_BIENVENIDA = os.environ.get("MENSAJE_BIENVENIDA", "¡Hola desde FastAPI parametrizable!")
+
+# Variables globales de la aplicación
+webhook_url = WEBHOOK_URL_DEFAULT
+usuario_default = USUARIO_DEFAULT
+tecnologia_default = TECNOLOGIA_DEFAULT
+mensaje_default = MENSAJE_DEFAULT
+mensaje_auto_default = MENSAJE_AUTO_DEFAULT
 contador = 0
-intervalo_segundos = 2  # Tiempo por defecto
+intervalo_segundos = INTERVALO_DEFAULT
 enviando_automatico = False 
 
 @app.get("/")
 def read_root():
-    return {"mensaje": "¡Hola desde FastAPI en Render!"}
+    return {"mensaje": MENSAJE_BIENVENIDA}
 
 @app.get("/health")
 def health_check():
@@ -60,18 +92,28 @@ headers = {
 }
 
 @app.post("/send-webhook")
-def send_webhook():
+def send_webhook(mensaje: str = None, usuario: str = None, tecnologia: str = None):
     global contador
     contador += 1
+    
+    # Usar parámetros recibidos o valores por defecto
+    mensaje_final = mensaje or mensaje_default
+    usuario_final = usuario or usuario_default
+    tecnologia_final = tecnologia or tecnologia_default
+    
     payload = {
-        "mensaje": "Hola desde Python xd", 
-        "usuario": "Emiliano:", 
-        "tecnologia": "FastAPI",
+        "mensaje": mensaje_final, 
+        "usuario": usuario_final, 
+        "tecnologia": tecnologia_final,
         "timestamp": datetime.datetime.now().isoformat(),
         "numero_envios": contador
     }
     response = requests.post(webhook_url, data=json.dumps(payload), headers=headers)
-    return {"status": response.status_code, "numero_envio": contador} 
+    return {
+        "status": response.status_code, 
+        "numero_envio": contador,
+        "payload_enviado": payload
+    } 
 
 @app.put("/webhook-url")
 def update_webhook_url(new_url: str):
@@ -85,8 +127,39 @@ def get_status():
         "webhook_url": webhook_url, 
         "total_envios": contador,
         "intervalo_segundos": intervalo_segundos,
-        "enviando_automatico": enviando_automatico
+        "enviando_automatico": enviando_automatico,
+        "configuracion": {
+            "usuario_default": usuario_default,
+            "tecnologia_default": tecnologia_default,
+            "mensaje_default": mensaje_default,
+            "mensaje_auto_default": mensaje_auto_default,
+            "mensaje_bienvenida": MENSAJE_BIENVENIDA
+        }
     }
+
+@app.put("/config/usuario")
+def update_usuario_default(nuevo_usuario: str):
+    global usuario_default
+    usuario_default = nuevo_usuario
+    return {"mensaje": "Usuario por defecto actualizado", "nuevo_usuario": usuario_default}
+
+@app.put("/config/tecnologia")
+def update_tecnologia_default(nueva_tecnologia: str):
+    global tecnologia_default
+    tecnologia_default = nueva_tecnologia
+    return {"mensaje": "Tecnología por defecto actualizada", "nueva_tecnologia": tecnologia_default}
+
+@app.put("/config/mensaje")
+def update_mensaje_default(nuevo_mensaje: str):
+    global mensaje_default
+    mensaje_default = nuevo_mensaje
+    return {"mensaje": "Mensaje por defecto actualizado", "nuevo_mensaje": mensaje_default}
+
+@app.put("/config/mensaje-auto")
+def update_mensaje_auto_default(nuevo_mensaje: str):
+    global mensaje_auto_default
+    mensaje_auto_default = nuevo_mensaje
+    return {"mensaje": "Mensaje automático por defecto actualizado", "nuevo_mensaje": mensaje_auto_default}
 
 @app.put("/intervalo")
 def update_intervalo(segundos: int):
@@ -119,15 +192,16 @@ async def enviar_webhooks_automaticos():
     while enviando_automatico:
         contador += 1
         payload = {
-            "mensaje": "Webhook automático desde FastAPI",
-            "usuario": "Emiliano:",
-            "tecnologia": "FastAPI + Background Tasks",
+            "mensaje": mensaje_auto_default,
+            "usuario": usuario_default,
+            "tecnologia": tecnologia_default + " + Background Tasks",
             "timestamp": datetime.datetime.now().isoformat(),
-            "numero_envios": contador
+            "numero_envios": contador,
+            "tipo": "automatico"
         }
         try:
             requests.post(webhook_url, data=json.dumps(payload), headers=headers)
-            print(f"Webhook automático #{contador} enviado")
+            print(f"Webhook automático #{contador} enviado - {payload['mensaje']}")
         except Exception as e:
             print(f"Error enviando webhook: {e}")
         

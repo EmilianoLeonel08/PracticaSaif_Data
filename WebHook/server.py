@@ -13,13 +13,26 @@
 #curl.exe -X POST http://localhost:8000/stop-auto-webhook
 # Para ejecutar el servidor FastAPI, usa el comando:
 # uvicorn server:app 
+# Para Render: uvicorn server:app --host 0.0.0.0 --port $PORT
 import requests
 import json
 import time
 import datetime
 import asyncio
+import os
 from fastapi import FastAPI, BackgroundTasks
-app = FastAPI()
+from fastapi.middleware.cors import CORSMiddleware
+
+app = FastAPI(title="Webhook API", description="API para envío de webhooks", version="1.0.0")
+
+# Configurar CORS para permitir peticiones desde cualquier origen
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 webhook_url = "https://webhook.site/5b773625-6bfe-43f4-b462-1d5634ab1df6"
 contador = 0
@@ -29,6 +42,10 @@ enviando_automatico = False
 @app.get("/")
 def read_root():
     return {"mensaje": "¡Hola desde FastAPI en Render!"}
+
+@app.get("/health")
+def health_check():
+    return {"status": "healthy", "timestamp": datetime.datetime.now().isoformat()}
 
 headers = {
     "Content-Type": "application/json"

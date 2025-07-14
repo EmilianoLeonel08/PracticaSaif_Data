@@ -14,6 +14,8 @@
 # Para ejecutar el servidor FastAPI, usa el comando:
 # uvicorn server:app 
 # Para Render: uvicorn server:app --host 0.0.0.0 --port $PORT
+# Para probar el despliegue en Render, puedes usar el siguiente comando:
+#curl.exe -X POST https://practicasaif-data-webhook.onrender.com/
 import requests
 import json
 import time

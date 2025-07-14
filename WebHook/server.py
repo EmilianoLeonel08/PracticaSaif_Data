@@ -34,6 +34,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Para Render - detectar puerto automáticamente
+if __name__ == "__main__":
+    import uvicorn
+    port = int(os.environ.get("PORT", 8000))
+    uvicorn.run("server:app", host="0.0.0.0", port=port)
+
 webhook_url = "https://webhook.site/5b773625-6bfe-43f4-b462-1d5634ab1df6"
 contador = 0
 intervalo_segundos = 2  # Tiempo por defecto

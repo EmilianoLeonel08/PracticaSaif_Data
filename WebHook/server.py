@@ -61,10 +61,10 @@ if __name__ == "__main__":
 WEBHOOK_URL_DEFAULT = os.environ.get("WEBHOOK_URL", "https://webhook.site/5b773625-6bfe-43f4-b462-1d5634ab1df6")
 USUARIO_DEFAULT = os.environ.get("USUARIO", "Usuario por defecto")
 TECNOLOGIA_DEFAULT = os.environ.get("TECNOLOGIA", "FastAPI")
-MENSAJE_DEFAULT = os.environ.get("MENSAJE", "Hola desde aplicación parametrizable")
-MENSAJE_AUTO_DEFAULT = os.environ.get("MENSAJE_AUTO", "Webhook automático parametrizable")
-INTERVALO_DEFAULT = int(os.environ.get("INTERVALO_DEFAULT", "2"))
-MENSAJE_BIENVENIDA = os.environ.get("MENSAJE_BIENVENIDA", "¡Hola desde FastAPI parametrizable!")
+MENSAJE_DEFAULT = os.environ.get("MENSAJE", "Hola desde aplicación :D ")
+MENSAJE_AUTO_DEFAULT = os.environ.get("MENSAJE_AUTO", "Webhook automático ")
+INTERVALO_DEFAULT = int(os.environ.get("INTERVALO_DEFAULT", "5"))
+MENSAJE_BIENVENIDA = os.environ.get("MENSAJE_BIENVENIDA", "¡Hola desde FastAPI ;) !")
 
 # Variables globales de la aplicación
 webhook_url = WEBHOOK_URL_DEFAULT

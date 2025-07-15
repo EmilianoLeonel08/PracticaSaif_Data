@@ -1,8 +1,5 @@
 #Cómandos de ejecución: 
-# ==============================================
-# APLICACIÓN COMPLETAMENTE PARAMETRIZABLE
-# ==============================================
-# 
+
 # ENDPOINTS BÁSICOS:
 # Enviar webhook con parámetros personalizados
 #curl.exe -X POST "https://practicasaif-data-webhook.onrender.com/send-webhook?mensaje=MiMensaje&usuario=MiUsuario&tecnologia=MiTech"

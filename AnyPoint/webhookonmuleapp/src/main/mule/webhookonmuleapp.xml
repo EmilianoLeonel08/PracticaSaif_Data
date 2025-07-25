@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" 
+	xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http" 
+	xmlns="http://www.mulesoft.org/schema/mule/core" 
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+	xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	
+	<!-- HTTP Listener Configuration -->
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="3907503d-a7b7-4c37-a982-7d0b969fa809">
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	
+	<!-- Oracle Database Configuration -->
+	<db:config name="Oracle_Database_Config" doc:name="Database Config" doc:id="b96676d3-fbb3-430f-af71-b5c62a677460">
+		<db:oracle-connection host="localhost" user="HR" password="root" instance="xe"/>
+	</db:config>
+	
+	<!-- Main Flow: Employee Webhook Receiver -->
+	<flow name="employee-webhook-receiver-flow" doc:id="dd6358df-df6d-4d09-bb01-e58b078a3884">
+		<http:listener doc:name="Employee Webhook Listener" doc:id="b6274f50-fd09-4c34-a5fe-ae1d67f29055" config-ref="HTTP_Listener_config" path="/employee-webhook"/>
+		
+		<!-- Logger para ver qué payload llega -->
+		<logger level="INFO" doc:name="Dato " message="Payload recibido: #[payload]"/>
+		
+		<!-- Transform Message: Procesar XML y preparar datos para Oracle -->
+		<ee:transform doc:name="Transform Message" doc:id="17aea76e-2cc8-4f6b-bd74-10c3ee5df182">
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+var emp = payload.webhook.employee
+---
+{
+	employee_id: emp.employee_id as Number,
+	first_name: emp.first_name,
+	last_name: emp.last_name,
+	email: emp.email,
+	phone_number: if (emp.phone_number != "") emp.phone_number else null,
+	hire_date: emp.hire_date,
+	job_id: emp.job_id,
+	salary: emp.salary as Number,
+	commission_pct: if (emp.commission_pct != "" and emp.commission_pct != null) emp.commission_pct as Number else null,
+	manager_id: if (emp.manager_id != "" and emp.manager_id != null) emp.manager_id as Number else null,
+	department_id: if (emp.department_id != "" and emp.department_id != null) emp.department_id as Number else null
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		
+		<!-- Logger para debug: Ver qué datos van a Oracle -->
+		<logger level="INFO" doc:name="Transform Result" message="Datos para Oracle: #[payload]"/>
+		
+		<!-- Database Insert: Insertar empleado en Oracle -->
+		<db:insert doc:name="Insert Empleado" doc:id="c8a74f07-c80f-42b8-a540-91f4ce3c7cf2" config-ref="Oracle_Database_Config">
+			<db:sql ><![CDATA[INSERT INTO HR.EMPLOYEES 
+(employee_id, first_name, last_name, email, phone_number, hire_date, job_id, salary, commission_pct, manager_id, department_id)
+VALUES 
+(:employee_id, :first_name, :last_name, :email, :phone_number, TO_DATE(:hire_date, 'YYYY-MM-DD'), :job_id, :salary, :commission_pct, :manager_id, :department_id)]]></db:sql>
+			<db:input-parameters ><![CDATA[#[payload]]]></db:input-parameters>
+		</db:insert>
+		
+	</flow>
+	
+</mule>

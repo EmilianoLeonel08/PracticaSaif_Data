@@ -1,0 +1,21 @@
+# Archivos del sistema
+desktop.ini
+Thumbs.db
+
+# Carpetas del editor
+.vscode/
+
+# Node.js
+node_modules/
+*.log
+
+# Python
+__pycache__/
+*.py[cod]
+
+# Archivos comprimidos
+*.zip
+*.rar
+
+# Otros
+.DS_Store

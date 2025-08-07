@@ -3,11 +3,11 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<groupId>com.mycompany</groupId>
-	<artifactId>webhookonmuleapp</artifactId>
+	<artifactId>lab4_fileconnectorsyciclos</artifactId>
 	<version>1.0.0-SNAPSHOT</version>
 	<packaging>mule-application</packaging>
 
-	<name>webhookonmuleapp</name>
+	<name>lab4_fileconnectorsyciclos</name>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -29,14 +29,6 @@
 				<artifactId>mule-maven-plugin</artifactId>
 				<version>${mule.maven.plugin.version}</version>
 				<extensions>true</extensions>
-				<configuration>
-					<sharedLibraries>
-						<sharedLibrary>
-							<groupId>com.mycompany</groupId>
-							<artifactId>ojdbc11</artifactId>
-						</sharedLibrary>
-					</sharedLibraries>
-				</configuration>
 			</plugin>
 		</plugins>
 	</build>
@@ -50,8 +42,8 @@
 		</dependency>
 		<dependency>
 			<groupId>org.mule.connectors</groupId>
-			<artifactId>mule-sockets-connector</artifactId>
-			<version>1.2.5</version>
+			<artifactId>mule-file-connector</artifactId>
+			<version>1.5.2</version>
 			<classifier>mule-plugin</classifier>
 		</dependency>
 		<dependency>
@@ -61,9 +53,10 @@
 			<classifier>mule-plugin</classifier>
 		</dependency>
 		<dependency>
-			<groupId>com.mycompany</groupId>
-			<artifactId>ojdbc11</artifactId>
-			<version>0.1</version>
+			<groupId>org.mule.modules</groupId>
+			<artifactId>mule-apikit-module</artifactId>
+			<version>1.11.3</version>
+			<classifier>mule-plugin</classifier>
 		</dependency>
 	</dependencies>
 

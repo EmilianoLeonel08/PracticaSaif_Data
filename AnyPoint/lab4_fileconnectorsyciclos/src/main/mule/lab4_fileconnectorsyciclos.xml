@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns:file="http://www.mulesoft.org/schema/mule/file"
+      xmlns:http="http://www.mulesoft.org/schema/mule/http"
+      xmlns="http://www.mulesoft.org/schema/mule/core"
+      xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+      xsi:schemaLocation="
+        http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+        http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+        http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+        http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd">
+		
+    <flow name="list-files-flow">
+
+        <http:listener config-ref="HTTP_Listener_config" path="/list-files" allowedMethods="POST"/>
+
+        <set-variable variableName="directoryPath" value="#[attributes.queryParams.path]"/>
+
+        <file:list doc:name="List" doc:id="e1345abf-cee2-4385-8607-c4af798ddfc9" directoryPath="#[vars.directoryPath]"/>
+		<set-variable variableName="fileList" value="#[payload]"/>
+
+        <logger level="INFO" doc:name="Logger" message="#[write(vars.fileList, 'application/json')]" />
+		<choice>
+            <when expression="#[vars.fileList != null and sizeOf(vars.fileList) > 0]">
+
+                <ee:transform doc:name="To XML (files)">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/xml
+---
+files: {
+    file: vars.fileList map (item) -> {
+        name: item.attributes.name,
+        path: item.attributes.path
+    }
+}
+]]></ee:set-payload>
+                        <ee:set-attributes><![CDATA[%dw 2.0
+output application/java
+---
+{
+    headers: {
+        "content-type": "application/xml"
+    },
+    statusCode: 200
+}
+]]></ee:set-attributes>
+                    </ee:message>
+                </ee:transform>
+
+            </when>
+            <otherwise>
+                <ee:transform doc:name="To XML (error)">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/xml
+---
+{
+    error: {
+        code: 404,
+        message: "No se encontraron archivos en la ruta especificada"
+    }
+}
+]]></ee:set-payload>
+                        <ee:set-attributes><![CDATA[%dw 2.0
+output application/java
+---
+{
+    headers: {
+        "content-type": "application/xml"
+    },
+    statusCode: 404
+}
+]]></ee:set-attributes>
+                    </ee:message>
+                </ee:transform>
+            </otherwise>
+        </choice>
+    </flow>
+	<http:listener-config name="HTTP_Listener_config">
+        <http:listener-connection host="0.0.0.0" port="8081"/>
+    </http:listener-config>
+</mule>

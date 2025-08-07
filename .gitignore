@@ -19,3 +19,21 @@ __pycache__/
 
 # Otros
 .DS_Store
+
+# MuleSoft, Java, Anypoint Studio, Maven & OS
+.mule/
+.tooling-apps-cache/
+target/
+*.iml
+.idea/
+*.log
+*.tmp
+*.class
+*.jar
+*.war
+*.ear
+.DS_Store
+node_modules/
+*.swp
+plugins-tmp/
+workingDir/

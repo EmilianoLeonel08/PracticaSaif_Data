@@ -10,32 +10,53 @@
         http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
         http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
         http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd">
-		
+
     <flow name="list-files-flow">
 
+        <!-- 1) Escucha POST en /list-files -->
         <http:listener config-ref="HTTP_Listener_config" path="/list-files" allowedMethods="POST"/>
 
+        <!-- 2) Toma la ruta desde query param ?path= -->
         <set-variable variableName="directoryPath" value="#[attributes.queryParams.path]"/>
 
-        <file:list doc:name="List" doc:id="e1345abf-cee2-4385-8607-c4af798ddfc9" directoryPath="#[vars.directoryPath]"/>
-		<set-variable variableName="fileList" value="#[payload]"/>
+        <!-- 3) Lista archivos en la ruta -->
+        <file:list doc:name="List" directoryPath="#[vars.directoryPath]"/>
 
-        <logger level="INFO" doc:name="Logger" message="#[write(vars.fileList, 'application/json')]" />
-		<choice>
-            <when expression="#[vars.fileList != null and sizeOf(vars.fileList) > 0]">
+        <!-- 4) Inicializa acumulador -->
+        <set-variable variableName="files" value="#[[]]"/>
 
+        <!-- 5) Itera cada resultado de file:list -->
+        <foreach collection="#[payload]">
+            <!-- Logger para inspección: verás que payload es Binary y los metadatos están en attributes -->
+            <logger level="INFO"
+                    doc:name="Per-item Logger"
+                    message='PayloadType: #[typeOf(payload)] | Name: #[attributes.name] | Path: #[attributes.path]' />
+
+            <!-- Acumula {name, path} desde attributes (NO desde payload) -->
+            <set-variable variableName="files"
+                          value="#[vars.files ++ [{ 
+                              name: attributes.name, 
+                              path: attributes.path 
+                          }]]"/>
+        </foreach>
+
+        <!-- (Opcional) Logger final del acumulado -->
+        <logger level="INFO" doc:name="Files Accumulated" message="#[write(vars.files, 'application/json')]" />
+
+        <!-- 6) Respuesta -->
+        <choice>
+            <when expression="#[sizeOf(vars.files) > 0]">
                 <ee:transform doc:name="To XML (files)">
                     <ee:message>
                         <ee:set-payload><![CDATA[%dw 2.0
 output application/xml
 ---
 files: {
-    file: vars.fileList map (item) -> {
-        name: item.attributes.name,
-        path: item.attributes.path
+    file: vars.files map (f) -> {
+        name: f.name,
+        path: f.path
     }
-}
-]]></ee:set-payload>
+}]]></ee:set-payload>
                         <ee:set-attributes><![CDATA[%dw 2.0
 output application/java
 ---
@@ -44,11 +65,9 @@ output application/java
         "content-type": "application/xml"
     },
     statusCode: 200
-}
-]]></ee:set-attributes>
+}]]></ee:set-attributes>
                     </ee:message>
                 </ee:transform>
-
             </when>
             <otherwise>
                 <ee:transform doc:name="To XML (error)">
@@ -61,8 +80,7 @@ output application/xml
         code: 404,
         message: "No se encontraron archivos en la ruta especificada"
     }
-}
-]]></ee:set-payload>
+}]]></ee:set-payload>
                         <ee:set-attributes><![CDATA[%dw 2.0
 output application/java
 ---
@@ -71,14 +89,17 @@ output application/java
         "content-type": "application/xml"
     },
     statusCode: 404
-}
-]]></ee:set-attributes>
+}]]></ee:set-attributes>
                     </ee:message>
                 </ee:transform>
             </otherwise>
         </choice>
+
     </flow>
-	<http:listener-config name="HTTP_Listener_config">
+
+    <!-- Configuración HTTP -->
+    <http:listener-config name="HTTP_Listener_config">
         <http:listener-connection host="0.0.0.0" port="8081"/>
     </http:listener-config>
+
 </mule>
